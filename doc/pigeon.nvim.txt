@@ -54,8 +54,10 @@ The plugin loads on the first `:Pigeon`.
       multiplexer = "auto",     -- auto | tmux | none
       picker = "native",        -- native | fzf-lua | snacks
 
-      format = nil,             -- function(file, loc) -> string; nil keeps
-                                -- the `file :L42` default
+      format = function(file, loc) -- how a location reads
+        return file .. (loc and " " .. loc or "")
+      end,
+
       prompts = {               -- add or override prompt templates
         ["{file}"] = "{file}",
         ["{line}"] = "{line}",
