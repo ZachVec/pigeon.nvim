@@ -83,6 +83,16 @@ a fixture that looks wrong is really a fixture that was configured away.
 `default-command` likewise changes what a pane runs. Fixtures therefore start
 their server with `-f /dev/null` and address panes by id, never by position.
 
+### `kill-server` returns before the server has released its socket
+
+Restarting a server under the same socket name races the teardown: the new
+client connects to a socket whose server is still exiting, and dies with
+`server exited unexpectedly`. Measured on the GitHub runner: 10 of 10 restarts
+failed, while a first start (no server to kill) and a restart 150 ms later both
+passed 10 of 10 — a fast local machine never sees it, which is why the specs
+only went red in CI. The tmux specs therefore name each server's socket after a
+generation counter; a fresh name cannot collide with the one being torn down.
+
 ### `send-keys -l` collapses newlines in some TUIs
 
 `send-keys -l` sends a raw LF, and **claude** collapses those newlines onto one
