@@ -64,7 +64,7 @@ require("pigeon").setup({
   },
 
   comments = {
-    item = "{lines} {note}", -- what a comment sends
+    item = "{lines} {note}\n", -- what a comment sends
   },
 
   references = {
@@ -125,8 +125,7 @@ tree you are browsing — using `fd`, then `ripgrep`, then `find`; all three ski
 `.git`. `buffers` lists listed buffers whose file exists on disk, most recently
 used first, marking a modified buffer `[+]` because the panes read the on-disk
 version. Chosen paths are spelled as references (above), joined with
-`references.join`, and followed by a trailing space so continued typing stays
-off the last reference.
+`references.join` — nothing is added around them.
 
 ### Comments
 
@@ -143,11 +142,11 @@ note:
 
 ```lua
 require("pigeon").setup({
-  comments = { item = "{lines} {note}" },
+  comments = { item = "{lines} {note}\n" },
 })
 ```
 
-Every comment ends with a newline, so a second comment — and anything you type
+The default ends with a newline, so a second comment — and anything you type
 next — starts on its own line.
 
 ## Pickers

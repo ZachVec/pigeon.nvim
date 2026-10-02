@@ -190,7 +190,7 @@ describe("pigeon.commands", function()
     assert.are.equal(References.sources.files.preview, pick_spec.preview)
 
     pick_choices({ { text = "a.lua", path = "/tmp/proj/a.lua" }, { text = "b.lua", path = "/tmp/proj/b.lua" } })
-    assert.are.equal("a.lua\nb.lua ", (delivered_render("/tmp/proj")))
+    assert.are.equal("a.lua\nb.lua", (delivered_render("/tmp/proj")))
   end)
 
   it("sends a range verbatim", function()

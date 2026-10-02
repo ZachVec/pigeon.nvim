@@ -240,14 +240,14 @@ describe("pigeon.commands.references", function()
   it("joins the chosen references for the target's own cwd", function()
     local chosen = { { path = "/tmp/proj/a.lua" }, { path = "/tmp/proj/sub/b.lua" } }
     local render = References.render(chosen)
-    assert.are.equal("a.lua\nsub/b.lua ", (render("/tmp/proj")))
-    assert.are.equal("/tmp/proj/a.lua\n/tmp/proj/sub/b.lua ", (render(nil)))
+    assert.are.equal("a.lua\nsub/b.lua", (render("/tmp/proj")))
+    assert.are.equal("/tmp/proj/a.lua\n/tmp/proj/sub/b.lua", (render(nil)))
   end)
 
   it("honours the configured separator", function()
     Config.setup({ references = { join = " " } })
     local render = References.render({ { path = "/tmp/p/a.lua" }, { path = "/tmp/p/b.lua" } })
-    assert.are.equal("a.lua b.lua ", (render("/tmp/p")))
+    assert.are.equal("a.lua b.lua", (render("/tmp/p")))
   end)
 
   it("declines the whole message when a reference is declined", function()

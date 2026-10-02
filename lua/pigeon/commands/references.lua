@@ -161,10 +161,10 @@ M.sources = {
 }
 
 --- The message for a chosen set of paths: every reference spelled through the
---- configured dialect for the target's own cwd, joined by `references.join`,
---- with a trailing space so continued typing stays off the last reference.
---- A reference the format hook declines drops the whole message, and so does an
---- empty selection.
+--- configured dialect for the target's own cwd, joined by `references.join`.
+--- Nothing is added around them: the text is exactly the references and their
+--- separator. A reference the format hook declines drops the whole message, and
+--- so does an empty selection.
 ---@param chosen pigeon.commands.references.PathEntry[]
 ---@return pigeon.Render
 function M.render(chosen)
@@ -184,7 +184,7 @@ function M.render(chosen)
       end
       refs[#refs + 1] = ref
     end
-    return table.concat(refs, Config.options.references.join) .. " "
+    return table.concat(refs, Config.options.references.join)
   end
 end
 

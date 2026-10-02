@@ -42,11 +42,9 @@ function M.setup()
   end
 end
 
---- Render one comment through the configured `item` template for `cwd`, ending
---- it with a newline: a comment is a whole thought, so the next one — and
---- whatever you type next — starts on its own line. nil when a location field
---- has no reference, naming the field: the flow reports the reason instead of
---- sending a note with no anchor.
+--- Render one comment through the configured `item` template for `cwd`. nil
+--- when a location field has no reference, naming the field: the flow reports
+--- the reason instead of sending a note with no anchor.
 ---@param comment pigeon.Comment
 ---@param cwd string?
 ---@return string?
@@ -55,7 +53,7 @@ function M.render(comment, cwd)
   -- One path per comment, however many fields spell it. `lines` and `file` are
   -- spellable only while the format hook accepts them; nil is no reference.
   local path = vim.api.nvim_buf_get_name(comment.buf)
-  local text, failed = Util.interpolate(Config.options.comments.item, FIELDS, function(name)
+  return Util.interpolate(Config.options.comments.item, FIELDS, function(name)
     if name == "note" then
       return comment.note
     elseif name == "lines" then
@@ -69,10 +67,6 @@ function M.render(comment, cwd)
     end
     return "" -- unknown name: unreachable from whitelisted callers
   end)
-  if text == nil then
-    return nil, failed
-  end
-  return text .. "\n"
 end
 
 --- Ask for a note about lines `line1..line2` and deliver it to the target.

@@ -61,7 +61,7 @@ The plugin loads on the first `:Pigeon`.
       },
 
       comments = {
-        item = "{lines} {note}", -- what a comment sends
+        item = "{lines} {note}\n", -- what a comment sends
       },
 
       references = {
@@ -128,8 +128,7 @@ used first. A modified buffer is marked `[+]` because the panes read the
 on-disk version.
 
 Every chosen path is spelled as a reference (see |pigeon.nvim-reference|),
-joined by `references.join`, and followed by a trailing space so continued
-typing stays off the last reference.
+joined by `references.join`. Nothing is added around them.
 
 COMMENTS ~
                                                        *pigeon.nvim-comments*
@@ -146,11 +145,11 @@ Enter that submits them together.
 note. >
 
     require("pigeon").setup({
-      comments = { item = "{lines} {note}" },
+      comments = { item = "{lines} {note}\n" },
     })
 
 <
-Every comment ends with a newline, so a second comment, and anything you type
+The default ends with a newline, so a second comment, and anything you type
 next, starts on its own line.
 
 PICKERS ~
