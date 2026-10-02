@@ -5,6 +5,7 @@ local Util = require("pigeon.util")
 describe("pigeon.transport.tmux", function()
   local adapter
   local socket
+  local generation = 0
   local saved_tmux
   local saved_pane
 
@@ -13,8 +14,16 @@ describe("pigeon.transport.tmux", function()
     return { code = code, stdout = stdout, stderr = stderr }
   end
 
+  --- Stop whatever server this socket names and move to a fresh socket:
+  --- `kill-server` returns before the server has released its socket, so a
+  --- server started under the same name races that teardown and dies with
+  --- "server exited unexpectedly" (measured 10 of 10 restarts on the GitHub
+  --- runner, where it failed 2 of the cases below). A fresh name per server
+  --- cannot race it, and the dying one still removes its own socket.
   local function reset_server()
     tmux("kill-server") -- exit 1 when no server exists; that is expected here
+    generation = generation + 1
+    socket = ("pigeon-test-%d-%d"):format(vim.fn.getpid(), generation)
   end
 
   --- Start a fresh server with an empty config. Without `-f /dev/null` the
