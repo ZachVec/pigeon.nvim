@@ -1,9 +1,8 @@
 # pigeon.nvim
 
 Send text from Neovim into the **other panes of the multiplexer window this
-Neovim is running in**. Pigeon is the sending half of
-[vantage.nvim](https://github.com/ZachVec/vantage.nvim) — prompts, files and
-buffers, and comments — without any agent management.
+Neovim is running in**: a prompt template, a reference to a file or buffer, a
+comment on a line or selection, or the text you select.
 
 ## Requirements
 
