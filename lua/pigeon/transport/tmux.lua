@@ -109,9 +109,76 @@ local function paste(pane_id, text)
   return true, nil
 end
 
---- One peer handle over `pane_id`. The working directory is deliberately read
---- again at send time: a pane that has changed directory since the pick must
---- get references relative to where it is now.
+--- The command lines of `pid` and its descendants, outermost first, as `ps`
+--- reports them; nil when `ps` cannot be asked.
+---
+--- The whole command line, not the process name: a program launched through an
+--- interpreter — codex is a `#!/usr/bin/env node` script — keeps its name in
+--- the arguments, while the name column only ever shows the interpreter.
+---@param pid integer
+---@return string[]?
+local function commands(pid)
+  local code, stdout = Util.run({ "ps", "-A", "-ww", "-o", "pid,ppid,args" })
+  if code ~= 0 then
+    return nil
+  end
+
+  local cmd = {} ---@type table<integer, string>
+  local children = {} ---@type table<integer, integer[]>
+  for line in (stdout or ""):gmatch("[^\r\n]+") do
+    -- The header's first column is not a number, so it never reaches here.
+    local ps_pid, ppid, args = line:match("^%s*(%d+)%s+(%d+)%s+(.*)$")
+    local child, parent = tonumber(ps_pid or ""), tonumber(ppid or "")
+    if child and parent and args and args ~= "" then
+      cmd[child] = args
+      children[parent] = children[parent] or {}
+      children[parent][#children[parent] + 1] = child
+    end
+  end
+
+  -- Breadth-first from the pane's own process: an outer program is asked about
+  -- before anything it spawned.
+  local out, seen = {}, {}
+  local todo = { pid }
+  while #todo > 0 do
+    local current = table.remove(todo, 1)
+    if not seen[current] then
+      seen[current] = true
+      if cmd[current] then
+        out[#out + 1] = cmd[current]
+      end
+      vim.list_extend(todo, children[current] or {})
+    end
+  end
+  return out
+end
+
+--- The target's context, read at send time: its working directory, and the
+--- command lines of the processes running in it, outermost first. Either half
+--- is nil when the pane cannot be asked.
+---@param pane_id string
+---@return pigeon.RenderCtx
+local function probe(pane_id)
+  local ctx = { cwd = nil, process = nil }
+  local result = exec("display-message", "-t", pane_id, "-p", "#{pane_current_path}\t#{pane_pid}")
+  if result.code ~= 0 then
+    return ctx
+  end
+  local cwd, pid = (result.stdout or ""):match("^(.-)\t(%d+)")
+  if cwd and cwd ~= "" then
+    ctx.cwd = cwd
+  end
+  local pane_pid = tonumber(pid or "")
+  if pane_pid then
+    ctx.process = commands(pane_pid)
+  end
+  return ctx
+end
+
+--- One peer handle over `pane_id`. The context is deliberately read again at
+--- send time: a pane that has changed directory since the pick must get
+--- references relative to where it is now, and a pane whose programs have
+--- changed must get the format of what runs there now.
 ---@param pane_id string
 ---@param index string
 ---@param command string
@@ -125,14 +192,7 @@ local function peer(pane_id, index, command, cwd)
   end
 
   function self:send(render)
-    local current = exec("display-message", "-t", pane_id, "-p", "#{pane_current_path}")
-    local send_cwd = nil
-    if current.code == 0 then
-      local trimmed = vim.trim(current.stdout)
-      send_cwd = trimmed ~= "" and trimmed or nil
-    end
-
-    local text, why = render(send_cwd)
+    local text, why = render(probe(pane_id))
     if text == nil then
       return false, why or "nothing to send"
     end

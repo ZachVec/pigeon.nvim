@@ -54,7 +54,8 @@ The plugin loads on the first `:Pigeon`.
       multiplexer = "auto",     -- auto | tmux | none
       picker = "native",        -- native | fzf-lua | snacks
 
-      format = nil,             -- function(file, loc) -> string
+      format = nil,             -- function(file, loc) -> string; nil keeps
+                                -- the `file :L42` default
       prompts = {               -- add or override prompt templates
         ["{file}"] = "{file}",
         ["{line}"] = "{line}",
@@ -85,8 +86,21 @@ working directory at all — plus its `:L` position when there is one:
     src/a.lua :L42
     src/a.lua :L42-45
 
-`format(file, loc)` decides the dialect; `loc` is the `:L` suffix, or nil for a
-whole-file reference: >
+Which format a reference takes depends on the program running in the target
+pane:
+
+    the target pane runs    a reference reads
+    claude                  `@src/a.lua`, `@src/a.lua#L42-50`
+    codex                   `src/a.lua`, `src/a.lua :L42-50`
+    anything else           `src/a.lua`, `src/a.lua :L42-50`
+
+A program launched through an interpreter still counts: detection reads the
+command lines of the pane's processes, so a `node .../codex` pane is
+recognized as codex.
+
+`format` replaces the fallback -- the format a pane running anything else
+reads; claude and codex keep their own. Its default is the plain `file` /
+`file :L42` spelling above: >
 
     require("pigeon").setup({
       format = function(file, loc)
@@ -95,7 +109,7 @@ whole-file reference: >
     })
 
 <
-A hook that returns nil or `""` declines that reference, and Pigeon sends
+A format that returns nil or `""` declines that reference, and Pigeon sends
 nothing rather than half a message.
 
 PROMPTS ~
@@ -140,9 +154,8 @@ several notes stack up in the receiving pane's own input, waiting for the one
 Enter that submits them together.
 
 `comments.item` decides what a comment sends and supports `{note}`, `{lines}`,
-`{file}`, `{start}`, and `{end}`; `{lines}` and `{file}` are spelled through
-`format` for the target pane. The default puts the reference first, then your
-note. >
+`{file}`, `{start}`, and `{end}`; `{lines}` and `{file}` are spelled in the
+target pane's format. The default puts the reference first, then your note. >
 
     require("pigeon").setup({
       comments = { item = "{lines} {note}\n" },

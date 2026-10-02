@@ -160,11 +160,11 @@ M.sources = {
   buffers = { prompt = "Buffers: ", preview = buffer_preview, stream = stream_buffers },
 }
 
---- The message for a chosen set of paths: every reference spelled through the
---- configured dialect for the target's own cwd, joined by `references.join`.
---- Nothing is added around them: the text is exactly the references and their
---- separator. A reference the format hook declines drops the whole message, and
---- so does an empty selection.
+--- The message for a chosen set of paths: every reference spelled in the
+--- format that target reads, joined by `references.join`. Nothing is added
+--- around them: the text is exactly the references and their separator. A
+--- reference the format declines drops the whole message, and so does an
+--- empty selection.
 ---@param chosen pigeon.commands.references.PathEntry[]
 ---@return pigeon.Render
 function M.render(chosen)
@@ -172,15 +172,15 @@ function M.render(chosen)
   for _, entry in ipairs(chosen) do
     paths[#paths + 1] = entry.path
   end
-  return function(cwd)
+  return function(ctx)
     if #paths == 0 then
       return nil, "nothing chosen"
     end
     local refs = {}
     for _, path in ipairs(paths) do
-      local ref = Reference.reference(cwd, path)
+      local ref = Reference.reference(ctx, path)
       if ref == nil then
-        return nil, ("%s has no reference"):format(Util.relpath(cwd, path))
+        return nil, ("%s has no reference"):format(Util.relpath(ctx.cwd, path))
       end
       refs[#refs + 1] = ref
     end

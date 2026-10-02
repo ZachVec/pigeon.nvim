@@ -24,7 +24,7 @@ describe("pigeon.deliver", function()
       if opts and opts.fail then
         return false, "pane is gone"
       end
-      local text, why = render(cwd)
+      local text, why = render({ cwd = cwd })
       if text == nil then
         return false, why
       end
@@ -164,8 +164,8 @@ describe("pigeon.deliver", function()
     peers = { a, b }
     local seen = {}
 
-    Deliver.run(function(cwd)
-      seen[#seen + 1] = cwd
+    Deliver.run(function(ctx)
+      seen[#seen + 1] = ctx.cwd
       return "x"
     end)
     pick_choices({ entry(a), entry(b) })

@@ -13,12 +13,19 @@
 ---@field repr fun(self: pigeon.Peer): string the display name; must distinguish panes
 ---@field send fun(self: pigeon.Peer, render: pigeon.Render): boolean, string?
 
+--- What a renderer is handed for one target: the target's own context, read at
+--- send time. A nil `cwd` means the adapter cannot tell the working directory,
+--- and every path in the text stays absolute; a nil `process` means it cannot
+--- tell what is running in the pane, and only the configured format applies.
+---@class pigeon.RenderCtx
+---@field cwd string? the target's working directory
+---@field process string[]? the target's command lines, outermost process first
+
 --- A message to deliver, resolved once per target: the adapter hands `render`
---- the target's own working directory, so a reference comes out relative to the
---- pane that will read it. A nil `cwd` means the adapter cannot tell, and the
---- renderer must fall back to absolute paths. Returning `nil, reason` means
---- there is nothing to deliver to that target.
----@alias pigeon.Render fun(cwd: string?): string?, string?
+--- the target's own context, so a reference comes out relative to the pane
+--- that will read it and in a format that pane understands. Returning
+--- `nil, reason` means there is nothing to deliver to that target.
+---@alias pigeon.Render fun(ctx: pigeon.RenderCtx): string?, string?
 
 --- A multiplexer adapter.
 ---@class pigeon.Transport

@@ -112,6 +112,33 @@ sh: 1: hello: not found
 Pigeon never sends Enter itself. Pasting multi-line text into a shell is the
 user's choice, not something pigeon can detect or prevent.
 
+## tmux · processes
+
+### A pane's program is not its process name
+
+Measured on Linux, in a pane running a `#!/usr/bin/env node` script named
+`codex`:
+
+| asked | answered |
+|---|---|
+| `#{pane_current_command}` | `node` |
+| `ps -o comm` | `MainThread` |
+| `ps -o args` | `node /…/bin/codex` |
+
+tmux reports the foreground process's `argv[0]` verbatim, so a binary run by
+path reads `./codex`, and `ps`'s name column for a node process is its main
+*thread* name. The program's own name survives only in the arguments — which is
+why a Profile matches the whole command line, read with one
+`ps -A -ww -o pid,ppid,args` and walked breadth-first from the pane's pid.
+
+### `pane_start_command` is the wrong fact
+
+It is the command the pane was **created** with and never changes afterwards: a
+pane where the user typed `codex` into a shell reports `sh`, and a pane launched
+as `tmux split-window claude` still reports `claude` after claude has exited.
+It cannot stand in for reading the pane at send time, and it fails silently in
+both directions.
+
 ## Pickers
 
 ### Runtimepath is not a reliable dependency check under lazy.nvim

@@ -2,49 +2,26 @@
 --- a message.
 ---
 --- Every command that puts a location in a message spells it through here, so
---- the same code reads the same way in every message and one `format` hook
---- replaces the dialect for all of them at once. It sits beside `deliver.lua`:
---- the two per-target services every flow needs — how a path reads, and where
---- the message goes.
-local Config = require("pigeon.config")
+--- the same code reads the same way in every message. Which format the
+--- reference takes is `formats`' business; this module only builds the path
+--- and its `:L` suffix. It sits beside `deliver.lua`: the two per-target
+--- services every flow needs — how a path reads, and where the message goes.
+local Formats = require("pigeon.formats")
 local Util = require("pigeon.util")
 
 local M = {}
 
---- The default dialect: the path and, when there is a position, its `:L`
---- suffix, joined by a space (`src/a.lua :L42`).
----@param file string
----@param loc? string
----@return string
-local function default_format(file, loc)
-  if loc then
-    return file .. " " .. loc
-  end
-  return file
-end
-
---- The resolved dialect: the configured hook, or the default above. Nothing to
---- roll back — `Config.setup` has already dropped a value that is not a hook —
---- so this module has no `reset`.
----@type pigeon.ReferenceFormat
-local format = default_format
-
---- Resolve the reference dialect from the applied configuration.
-function M.setup()
-  format = Config.options.format or default_format
-end
-
---- The reference for one location, spelled by the resolved dialect.
---- `cwd` is the base the path is relativized against: the target pane's
+--- The reference for one location, spelled in the format that target reads.
+--- `ctx.cwd` is the base the path is relativized against: the target pane's
 --- working directory. A nil `cwd` — an adapter that cannot report one — leaves
---- every path absolute. A nil path is no reference at all, and a hook that
+--- every path absolute. A nil path is no reference at all, and a format that
 --- declines with nil or "" is treated the same way.
----@param cwd string? relativization base; nil spells absolute paths
----@param path string? absolute path, or one already relative to `cwd`
+---@param ctx pigeon.RenderCtx the target, as the adapter reported it
+---@param path string? absolute path, or one already relative to the target's cwd
 ---@param start_row? integer 1-based first line; nil for a whole-file reference
 ---@param end_row? integer 1-based last line; only meaningful with `start_row`
 ---@return string?
-function M.reference(cwd, path, start_row, end_row)
+function M.reference(ctx, path, start_row, end_row)
   if path == nil or path == "" then
     return nil
   end
@@ -56,7 +33,8 @@ function M.reference(cwd, path, start_row, end_row)
       loc = (":L%d"):format(start_row)
     end
   end
-  local rendered = format(Util.relpath(cwd, path), loc)
+  local format = Formats.resolve(ctx.process)
+  local rendered = format(Util.relpath(ctx.cwd, path), loc)
   if rendered == nil or rendered == "" then
     return nil
   end

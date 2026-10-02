@@ -5,7 +5,7 @@ local Helpers = require("helpers")
 describe("pigeon.commands.prompts", function()
   local Config
   local Prompts
-  local Reference
+  local Formats
   local bufs = {}
 
   --- A named scratch buffer, wiped after the test.
@@ -19,16 +19,23 @@ describe("pigeon.commands.prompts", function()
 
   ---@param buf integer
   ---@param row integer
-  ---@return pigeon.commands.prompts.Ctx
-  local function ctx(buf, row)
+  ---@return pigeon.commands.prompts.Origin
+  local function origin(buf, row)
     return { buf = buf, row = row }
+  end
+
+  --- A target with only a working directory.
+  ---@param cwd string?
+  ---@return pigeon.RenderCtx
+  local function target(cwd)
+    return { cwd = cwd }
   end
 
   setup(function()
     Helpers.reload_pigeon()
     Config = require("pigeon.config")
     Prompts = require("pigeon.commands.prompts")
-    Reference = require("pigeon.reference")
+    Formats = require("pigeon.formats")
   end)
 
   teardown(function()
@@ -37,7 +44,7 @@ describe("pigeon.commands.prompts", function()
 
   before_each(function()
     Config.setup()
-    Reference.setup()
+    Formats.setup()
   end)
 
   after_each(function()
@@ -49,35 +56,35 @@ describe("pigeon.commands.prompts", function()
 
   it("spells {file} and {line} relative to the target's cwd", function()
     local buf = named("/tmp/proj/src/a.lua")
-    assert.are.equal("src/a.lua", (Prompts.render("{file}", ctx(buf, 1))("/tmp/proj")))
-    assert.are.equal("src/a.lua :L3", (Prompts.render("{line}", ctx(buf, 3))("/tmp/proj")))
+    assert.are.equal("src/a.lua", (Prompts.render("{file}", origin(buf, 1))(target("/tmp/proj"))))
+    assert.are.equal("src/a.lua :L3", (Prompts.render("{line}", origin(buf, 3))(target("/tmp/proj"))))
   end)
 
   it("renders per target: absolute with no cwd, absolute outside it", function()
     local buf = named("/tmp/proj/src/a.lua")
-    local render = Prompts.render("{file}", ctx(buf, 1))
-    assert.are.equal("src/a.lua", (render("/tmp/proj")))
-    assert.are.equal("/tmp/proj/src/a.lua", (render(nil)))
-    assert.are.equal("/tmp/proj/src/a.lua", (render("/elsewhere")))
+    local render = Prompts.render("{file}", origin(buf, 1))
+    assert.are.equal("src/a.lua", (render(target("/tmp/proj"))))
+    assert.are.equal("/tmp/proj/src/a.lua", (render(target(nil))))
+    assert.are.equal("/tmp/proj/src/a.lua", (render(target("/elsewhere"))))
   end)
 
   it("keeps a multi-line template's shape", function()
     local buf = named("/tmp/proj/a.lua")
-    local render = Prompts.render("look at {file}\nand {line}", ctx(buf, 2))
-    assert.are.equal("look at a.lua\nand a.lua :L2", (render("/tmp/proj")))
+    local render = Prompts.render("look at {file}\nand {line}", origin(buf, 2))
+    assert.are.equal("look at a.lua\nand a.lua :L2", (render(target("/tmp/proj"))))
   end)
 
   it("fails the whole render, naming the placeholder, when one resolves empty", function()
     local buf = Helpers.buffer({ "a" }) -- unnamed: {file} has nothing to spell
     bufs[#bufs + 1] = buf
-    local rendered, why = Prompts.render("{file} and {line}", ctx(buf, 1))("/tmp")
+    local rendered, why = Prompts.render("{file} and {line}", origin(buf, 1))(target("/tmp"))
     assert.is_nil(rendered)
     assert.are.equal("{file} resolved empty", why)
   end)
 
   it("leaves an unknown placeholder literal", function()
     local buf = named("/tmp/proj/a.lua")
-    assert.are.equal("x{nope}y", (Prompts.render("x{nope}y", ctx(buf, 1))("/tmp/proj")))
+    assert.are.equal("x{nope}y", (Prompts.render("x{nope}y", origin(buf, 1))(target("/tmp/proj"))))
   end)
 
   it("warns about a configured template naming an unknown placeholder", function()

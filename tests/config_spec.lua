@@ -2,7 +2,7 @@
 
 local Helpers = require("helpers")
 
---- The option table and its shape checks. What a value *selects* — the dialect
+--- The option table and its shape checks. What a value *selects* — the format
 --- a format hook spells, the picker a name resolves to — is the owning
 --- module's spec (`references_spec`, `picker_spec`).
 describe("pigeon.config", function()
@@ -21,7 +21,8 @@ describe("pigeon.config", function()
     Config.setup()
     assert.are.equal("auto", Config.options.multiplexer)
     assert.are.equal("native", Config.options.picker)
-    assert.is_nil(Config.options.format)
+    assert.are.equal("a/b.lua :L42", Config.options.format("a/b.lua", ":L42"))
+    assert.are.equal("a/b.lua", Config.options.format("a/b.lua", nil))
     assert.are.equal("\n", Config.options.references.join)
     assert.are.equal("{lines} {note}\n", Config.options.comments.item)
   end)
@@ -36,7 +37,7 @@ describe("pigeon.config", function()
     local notes = Helpers.notifications(function()
       Config.setup({ format = "nope" })
     end)
-    assert.is_nil(Config.options.format)
+    assert.are.equal("a/b.lua :L42", Config.options.format("a/b.lua", ":L42"))
     assert.are.equal(1, #notes)
     assert.is_truthy(notes[1]:find("format", 1, true))
   end)

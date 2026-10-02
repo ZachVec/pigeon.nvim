@@ -19,6 +19,7 @@ lua/pigeon/
   picker/             the selection-UI seam: init.lua + native, fzf_lua, snacks
   deliver.lua         target resolution (remembered / single / pick) + fan-out
   reference.lua       the one reference spelling every command spells through
+  formats/            the format registry: one Profile per program + resolution
   commands/           :Pigeon dispatch (init.lua) + one file per command
                       (prompts, references, comments): text and flow together
 docs/                 design.md (structure and decisions) + glossary.md + gotchas.md
@@ -51,11 +52,12 @@ dependencies under `.tests/`.
 - **Terminology lives in [docs/glossary.md](docs/glossary.md).** Use its words
   in code, comments, docs, and commit messages; when a term changes, change the
   glossary in the same change.
-- **Config is data.** `config.lua` carries the option table and checks its
-  shape; the behavior an option selects is resolved by the module that owns it,
-  in that module's own `setup` — `Transport.setup`, `Picker.setup`,
-  `Reference.setup`. A module that prepares state exposes `setup`, never
-  `apply`.
+- **Config is data.** `config.lua` carries the option table — every default,
+  including a default that is itself the value (a hook, a template) — and
+  checks its shape; the behavior an option *selects* is resolved by the module
+  that owns it, in that module's own `setup` — `Transport.setup`,
+  `Picker.setup`, `Formats.setup`. A module that prepares state exposes
+  `setup`, never `apply`.
 - Lua 5.1 / LuaJIT only — Neovim's runtime; no features newer than 5.1.
 - Every module is `local M = {}` … `return M`; imports use `require("pigeon.…")`,
   sorted by module path.

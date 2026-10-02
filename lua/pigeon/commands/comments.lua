@@ -42,24 +42,24 @@ function M.setup()
   end
 end
 
---- Render one comment through the configured `item` template for `cwd`. nil
---- when a location field has no reference, naming the field: the flow reports
---- the reason instead of sending a note with no anchor.
+--- Render one comment through the configured `item` template for one target.
+--- nil when a location field has no reference, naming the field: the flow
+--- reports the reason instead of sending a note with no anchor.
 ---@param comment pigeon.Comment
----@param cwd string?
+---@param ctx pigeon.RenderCtx
 ---@return string?
 ---@return string? failed placeholder name, when nil is returned
-function M.render(comment, cwd)
+function M.render(comment, ctx)
   -- One path per comment, however many fields spell it. `lines` and `file` are
-  -- spellable only while the format hook accepts them; nil is no reference.
+  -- spellable only while the format accepts them; nil is no reference.
   local path = vim.api.nvim_buf_get_name(comment.buf)
   return Util.interpolate(Config.options.comments.item, FIELDS, function(name)
     if name == "note" then
       return comment.note
     elseif name == "lines" then
-      return Reference.reference(cwd, path, comment.start_row, comment.end_row)
+      return Reference.reference(ctx, path, comment.start_row, comment.end_row)
     elseif name == "file" then
-      return Reference.reference(cwd, path)
+      return Reference.reference(ctx, path)
     elseif name == "start" then
       return tostring(comment.start_row)
     elseif name == "end" then
@@ -92,8 +92,8 @@ function M.run(line1, line2)
       return
     end
     local comment = { buf = buf, start_row = line1, end_row = line2, note = note }
-    Deliver.run(function(cwd)
-      local text, failed = M.render(comment, cwd)
+    Deliver.run(function(ctx)
+      local text, failed = M.render(comment, ctx)
       if text == nil then
         return nil, ("{%s} resolved empty"):format(failed)
       end

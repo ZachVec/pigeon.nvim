@@ -57,7 +57,7 @@ require("pigeon").setup({
   multiplexer = "auto",     -- auto | tmux | none
   picker = "native",        -- native | fzf-lua | snacks
 
-  format = nil,             -- function(file, loc) -> string: the reference dialect
+  format = nil,             -- function(file, loc) -> string; nil keeps `file :L42`
   prompts = {               -- add or override prompt templates
     ["{file}"] = "{file}",
     ["{line}"] = "{line}",
@@ -88,7 +88,22 @@ src/a.lua :L42
 src/a.lua :L42-45
 ```
 
-`format` decides the dialect, so an `@`-style tool reads naturally:
+Which format a reference takes depends on the program running in the target
+pane:
+
+| The target pane runs | A reference reads |
+|----------------------|-------------------|
+| claude | `@src/a.lua`, `@src/a.lua#L42-50` |
+| codex | `src/a.lua`, `src/a.lua :L42-50` |
+| anything else | `src/a.lua`, `src/a.lua :L42-50` |
+
+A program launched through an interpreter still counts: detection reads the
+command lines of the pane's processes, so a `node …/codex` pane is recognized
+as codex.
+
+`format` replaces the fallback — the format a pane running anything else reads;
+claude and codex keep their own. Its default is the `src/a.lua` /
+`src/a.lua :L42` spelling above:
 
 ```lua
 require("pigeon").setup({
@@ -98,7 +113,7 @@ require("pigeon").setup({
 })
 ```
 
-A hook that returns `nil` or `""` declines that reference, and pigeon sends
+A format that returns `nil` or `""` declines that reference, and pigeon sends
 nothing rather than half a message.
 
 ### Prompts
@@ -136,9 +151,8 @@ notes stack up in the receiving pane's own input, waiting for the one Enter
 that submits them together.
 
 `comments.item` decides what a comment sends and supports `{note}`, `{lines}`,
-`{file}`, `{start}`, and `{end}`; `{lines}` and `{file}` are spelled through
-`format` for the target pane. The default puts the reference first, then your
-note:
+`{file}`, `{start}`, and `{end}`; `{lines}` and `{file}` are spelled in the
+target pane's format. The default puts the reference first, then your note:
 
 ```lua
 require("pigeon").setup({

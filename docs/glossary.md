@@ -57,13 +57,20 @@ _Avoid_: send, run
 
 **Render**:
 The text a send will deliver, produced per target. A Render is a function of
-the target's cwd, not a finished string.
+the target's context — its working directory, and what it is running — not a
+finished string.
 _Avoid_: message, payload, content, body
 
 **cwd**:
 The target pane's working directory, read at send time. nil means the adapter
 cannot tell, which makes every path in the text absolute.
 _Avoid_: dir, base, root, cwd of Neovim
+
+**process**:
+What the target pane is running, as the adapter reports it at send time: the
+command lines of the pane's processes, outermost first. A Profile is matched
+against them.
+_Avoid_: pid, comm, program, command name
 
 ## Composing
 
@@ -91,9 +98,16 @@ open.
 _Avoid_: link, path, file ref, file
 
 **format**:
-The configured hook deciding a reference's dialect — `file`, `file :L42`,
-`@file`.
+How a reference reads — `file`, `file :L42`, `@file`. Each Profile carries one,
+and the option's default is the plain spelling, which a target no Profile
+recognizes reads.
 _Avoid_: template, style, dialect
+
+**Profile**:
+One program Pigeon can address in a pane: how to recognize it in the target's
+process, and the format its references read in. Pigeon ships one per program it
+knows; claude and codex today.
+_Avoid_: tool, adapter, definition
 
 **Comment**:
 A note about a line range of a normal file, sent as soon as it is typed.

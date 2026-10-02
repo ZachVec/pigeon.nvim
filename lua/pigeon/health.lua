@@ -30,6 +30,9 @@ function M.check()
 
   local picker = require("pigeon.config").options.picker
   ok(("picker: %s"):format(picker))
+
+  local formats = require("pigeon.formats").names()
+  ok(("formats: %s"):format(#formats > 0 and table.concat(formats, ", ") or "none"))
 end
 
 return M

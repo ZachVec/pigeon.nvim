@@ -3,7 +3,7 @@
 --- The target is remembered for the session: a fresh pick happens only when
 --- nothing is remembered and the window has several siblings. Rendering is
 --- per target by construction — the only way out is `Peer.send(render)`, which
---- hands the renderer that target's own working directory.
+--- hands the renderer that target's own context.
 local Picker = require("pigeon.picker")
 local Transport = require("pigeon.transport")
 local Util = require("pigeon.util")

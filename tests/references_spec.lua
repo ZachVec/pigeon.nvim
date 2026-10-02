@@ -4,7 +4,7 @@ local Helpers = require("helpers")
 
 describe("pigeon.commands.references", function()
   local Config
-  local Reference
+  local Formats
   local References
   local tmp
   local original_path
@@ -97,7 +97,7 @@ describe("pigeon.commands.references", function()
   setup(function()
     Helpers.reload_pigeon()
     Config = require("pigeon.config")
-    Reference = require("pigeon.reference")
+    Formats = require("pigeon.formats")
     References = require("pigeon.commands.references")
   end)
 
@@ -107,7 +107,7 @@ describe("pigeon.commands.references", function()
 
   before_each(function()
     Config.setup()
-    Reference.setup()
+    Formats.setup()
     tmp = vim.fn.tempname()
     vim.fn.mkdir(tmp, "p")
     original_path = vim.env.PATH
@@ -240,14 +240,14 @@ describe("pigeon.commands.references", function()
   it("joins the chosen references for the target's own cwd", function()
     local chosen = { { path = "/tmp/proj/a.lua" }, { path = "/tmp/proj/sub/b.lua" } }
     local render = References.render(chosen)
-    assert.are.equal("a.lua\nsub/b.lua", (render("/tmp/proj")))
-    assert.are.equal("/tmp/proj/a.lua\n/tmp/proj/sub/b.lua", (render(nil)))
+    assert.are.equal("a.lua\nsub/b.lua", (render({ cwd = "/tmp/proj" })))
+    assert.are.equal("/tmp/proj/a.lua\n/tmp/proj/sub/b.lua", (render({})))
   end)
 
   it("honours the configured separator", function()
     Config.setup({ references = { join = " " } })
     local render = References.render({ { path = "/tmp/p/a.lua" }, { path = "/tmp/p/b.lua" } })
-    assert.are.equal("a.lua b.lua", (render("/tmp/p")))
+    assert.are.equal("a.lua b.lua", (render({ cwd = "/tmp/p" })))
   end)
 
   it("declines the whole message when a reference is declined", function()
@@ -260,14 +260,15 @@ describe("pigeon.commands.references", function()
         return file
       end,
     })
-    Reference.setup()
-    local rendered, why = References.render({ { path = "/tmp/p/a.lua" }, { path = "/tmp/p/b.lua" } })("/tmp/p")
+    Formats.setup()
+    local chosen = { { path = "/tmp/p/a.lua" }, { path = "/tmp/p/b.lua" } }
+    local rendered, why = References.render(chosen)({ cwd = "/tmp/p" })
     assert.is_nil(rendered)
     assert.is_truthy(why:find("b.lua", 1, true))
   end)
 
   it("declines an empty selection", function()
-    local rendered, why = References.render({})("/tmp/p")
+    local rendered, why = References.render({})({ cwd = "/tmp/p" })
     assert.is_nil(rendered)
     assert.are.equal("nothing chosen", why)
   end)

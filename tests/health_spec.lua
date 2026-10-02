@@ -31,7 +31,7 @@ describe("pigeon.health", function()
     Helpers.reload_pigeon()
   end)
 
-  it("reports the version, the multiplexer, and the picker", function()
+  it("reports the version, the multiplexer, the picker, and the profiles", function()
     report(function()
       package.loaded["pigeon.transport"] = {
         get = function()
@@ -49,6 +49,7 @@ describe("pigeon.health", function()
     assert.are.same({ "ok", "Neovim >= 0.11" }, reports[2])
     assert.are.same({ "ok", "multiplexer: tmux" }, reports[3])
     assert.are.same({ "ok", "picker: snacks" }, reports[4])
+    assert.are.same({ "ok", "formats: none" }, reports[5])
   end)
 
   it("warns, with the reason, when no multiplexer is detected", function()

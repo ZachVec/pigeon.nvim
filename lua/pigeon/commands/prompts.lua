@@ -2,9 +2,9 @@
 --- target, picked by name and delivered.
 ---
 --- A prompt renders to a `Render`, not to a finished string: the same template
---- produces different text for panes with different working directories, so
---- the resolvers take the target's cwd and the text is produced inside
---- `Peer.send`.
+--- produces different text for panes with different working directories and
+--- programs, so the resolvers take the target's context and the text is
+--- produced inside `Peer.send`.
 local Config = require("pigeon.config")
 local Deliver = require("pigeon.deliver")
 local Picker = require("pigeon.picker")
@@ -13,21 +13,21 @@ local Util = require("pigeon.util")
 
 local M = {}
 
---- What a prompt renders against: the buffer and cursor the flow was invoked
---- from.
----@class pigeon.commands.prompts.Ctx
+--- What a prompt was invoked against: the buffer and cursor the flow read
+--- before the pick opened.
+---@class pigeon.commands.prompts.Origin
 ---@field buf integer
 ---@field row integer
 
---- One resolver per placeholder. `cwd` is the target pane's working directory;
---- nil means the adapter could not report one, and every path stays absolute.
----@type table<string, fun(ctx: pigeon.commands.prompts.Ctx, cwd: string?): string?>
+--- One resolver per placeholder: `origin` is the invocation the flow captured,
+--- `ctx` the target at send time.
+---@type table<string, fun(origin: pigeon.commands.prompts.Origin, ctx: pigeon.RenderCtx): string?>
 local resolvers = {
-  file = function(ctx, cwd)
-    return Reference.reference(cwd, vim.api.nvim_buf_get_name(ctx.buf))
+  file = function(origin, ctx)
+    return Reference.reference(ctx, vim.api.nvim_buf_get_name(origin.buf))
   end,
-  line = function(ctx, cwd)
-    return Reference.reference(cwd, vim.api.nvim_buf_get_name(ctx.buf), ctx.row)
+  line = function(origin, ctx)
+    return Reference.reference(ctx, vim.api.nvim_buf_get_name(origin.buf), origin.row)
   end,
 }
 
@@ -64,15 +64,15 @@ end
 --- empty fails the whole render, naming the placeholder, so the caller skips
 --- the send with a reason instead of delivering half a prompt.
 ---@param template string
----@param ctx pigeon.commands.prompts.Ctx
+---@param origin pigeon.commands.prompts.Origin
 ---@return pigeon.Render
-function M.render(template, ctx)
+function M.render(template, origin)
   local lines = vim.split(template, "\n", { plain = true })
-  return function(cwd)
+  return function(ctx)
     local out = {}
     for _, line in ipairs(lines) do
       local rendered, failed = Util.interpolate(line, PLACEHOLDERS, function(name)
-        return resolvers[name](ctx, cwd)
+        return resolvers[name](origin, ctx)
       end)
       if rendered == nil then
         return nil, ("{%s} resolved empty"):format(failed)
@@ -102,7 +102,7 @@ function M.run()
   -- (snacks', fzf-lua's or dressing's `vim.ui.select`) makes its own buffer
   -- current, so reading it later would spell {file}/{line} against the picker
   -- instead of the file.
-  local ctx = {
+  local origin = {
     buf = vim.api.nvim_get_current_buf(),
     row = vim.api.nvim_win_get_cursor(0)[1],
   }
@@ -126,7 +126,7 @@ function M.run()
     end
 
     local template = Config.options.prompts[entry.name]
-    Deliver.run(M.render(template, ctx))
+    Deliver.run(M.render(template, origin))
   end)
 end
 

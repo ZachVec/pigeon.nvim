@@ -1,19 +1,22 @@
 --- Configuration for Pigeon: the option table, and the validation of its
 --- shape.
 ---
---- This module is data. The behavior a value selects — how a reference is
---- spelled, which implementation a name picks — belongs to the module that
---- owns that behavior, and is resolved by that module's own `setup`.
+--- This module is data: the defaults, and the checks that reject a value of the
+--- wrong shape. A default that is itself the value — a hook, a template —
+--- lives here, in the resolved table everything else reads; what a value
+--- *selects* (which picker a name picks, which Profile a pane matches) is
+--- resolved by the module that owns it, in that module's own `setup`.
 local Util = require("pigeon.util")
 
---- Renders a path plus its optional `:L` suffix in the user's dialect. The
---- hook `reference.lua` resolves; the shape `config.lua` accepts.
+--- Renders a path plus its optional `:L` suffix in the user's format. The
+--- default of `format` is one, each Profile carries one, and `formats`
+--- resolves the one a target reads; the shape `config.lua` accepts.
 ---@alias pigeon.ReferenceFormat fun(file: string, loc: string?): string?
 
 ---@class pigeon.Config
 ---@field multiplexer string "auto" (detect) | an adapter name | "none"
 ---@field picker string "native" | "fzf-lua" | "snacks"
----@field format pigeon.ReferenceFormat? absent means the default dialect
+---@field format pigeon.ReferenceFormat the plain spelling, or the configured hook
 ---@field prompts table<string, string> named prompt templates (name -> template)
 ---@field references { join: string } the files/buffers module's options
 ---@field comments { item: string }
@@ -37,10 +40,13 @@ local defaults = {
   multiplexer = "auto",
   --- Pluggable picker implementation.
   picker = "native",
-  --- How a location reference reads: the relativized path plus its `:L`
-  --- suffix. A tool dialect (an `@` prefix, a URI, ...) is a format hook;
-  --- without one, `reference.lua` spells the default dialect.
-  format = nil,
+  --- How a location reads: the relativized path plus its `:L` suffix. A tool
+  --- format (an `@` prefix, a URI, ...) is a hook; the default below is the
+  --- plain spelling (`src/a.lua :L42`), which a target no Profile recognizes
+  --- reads.
+  format = function(file, loc)
+    return file .. (loc and " " .. loc or "")
+  end,
   --- Named prompt templates offered by `:Pigeon prompt`. The built-ins are the
   --- raw references; user entries merge additively, so a name you set
   --- overrides the built-in while names you leave unset are kept.
@@ -70,9 +76,9 @@ M.options = vim.deepcopy(defaults)
 ---@param opts? pigeon.ConfigOverrides
 function M.setup(opts)
   M.options = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts or {})
-  if M.options.format ~= nil and type(M.options.format) ~= "function" then
-    Util.warn("format must be a function; using the default reference dialect")
-    M.options.format = nil
+  if type(M.options.format) ~= "function" then
+    Util.warn("format must be a function; using the default reference format")
+    M.options.format = defaults.format
   end
   for name, template in pairs(M.options.prompts) do
     if type(template) ~= "string" then

@@ -151,14 +151,35 @@ describe("pigeon.transport.tmux", function()
     tmux("split-window", "-t", "m", "-d", "-c", "/etc", "cat")
     enter("%0")
 
-    local seen_cwd
-    local ok, err = adapter.peers()[1]:send(function(cwd)
-      seen_cwd = cwd
+    local seen
+    local ok, err = adapter.peers()[1]:send(function(ctx)
+      seen = ctx
       return "pigeon"
     end)
     assert.is_true(ok)
     assert.are.equal(nil, err)
-    assert.are.equal("/etc", seen_cwd)
+    assert.are.equal("/etc", seen.cwd)
+  end)
+
+  it("hands the renderer the target pane's own command lines", function()
+    start("cat")
+    tmux("split-window", "-t", "m", "-d", "sleep 300")
+    enter("%0")
+
+    local seen
+    local ok = adapter.peers()[1]:send(function(ctx)
+      seen = ctx
+      return "pigeon"
+    end)
+    assert.is_true(ok)
+
+    local found = false
+    for _, cmd in ipairs(seen.process or {}) do
+      if cmd:find("sleep 300", 1, true) then
+        found = true
+      end
+    end
+    assert(found, "the pane's own command line must be in the process chain")
   end)
 
   it("delivers multi-line text verbatim", function()

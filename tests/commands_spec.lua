@@ -8,7 +8,7 @@ describe("pigeon.commands", function()
   local pick_spec
   local pick_choices
   local delivered_render
-  local Reference
+  local Formats
   local References
   local input_opts
   local original_input
@@ -70,7 +70,7 @@ describe("pigeon.commands", function()
   setup(function()
     Helpers.reload_pigeon()
     Config = require("pigeon.config")
-    Reference = require("pigeon.reference")
+    Formats = require("pigeon.formats")
     original_input = vim.ui.input
 
     local picker = {}
@@ -116,7 +116,7 @@ describe("pigeon.commands", function()
 
   before_each(function()
     Config.setup()
-    Reference.setup()
+    Formats.setup()
     pick_spec, pick_choices = nil, nil
     delivered_render, input_opts = nil, nil
   end)
@@ -165,8 +165,8 @@ describe("pigeon.commands", function()
     )
 
     pick_choices({ named_entry(pick_spec, "{line}") })
-    assert.are.equal("src/a.lua :L2", (delivered_render("/tmp/proj")))
-    assert.are.equal("/tmp/proj/src/a.lua :L2", (delivered_render(nil)))
+    assert.are.equal("src/a.lua :L2", (delivered_render({ cwd = "/tmp/proj" })))
+    assert.are.equal("/tmp/proj/src/a.lua :L2", (delivered_render({})))
   end)
 
   it("offers every configured prompt, user entries included, in a stable order", function()
@@ -190,7 +190,7 @@ describe("pigeon.commands", function()
     assert.are.equal(References.sources.files.preview, pick_spec.preview)
 
     pick_choices({ { text = "a.lua", path = "/tmp/proj/a.lua" }, { text = "b.lua", path = "/tmp/proj/b.lua" } })
-    assert.are.equal("a.lua\nb.lua", (delivered_render("/tmp/proj")))
+    assert.are.equal("a.lua\nb.lua", (delivered_render({ cwd = "/tmp/proj" })))
   end)
 
   it("sends a range verbatim", function()
@@ -198,7 +198,7 @@ describe("pigeon.commands", function()
     vim.api.nvim_win_set_buf(0, buf)
 
     Commands.run({ fargs = { "send" }, line1 = 2, line2 = 3 })
-    assert.are.equal("two\nthree", (delivered_render("/tmp/proj")))
+    assert.are.equal("two\nthree", (delivered_render({ cwd = "/tmp/proj" })))
   end)
 
   it("asks for a note about the range and delivers it", function()
@@ -209,8 +209,8 @@ describe("pigeon.commands", function()
     Commands.run({ fargs = { "comment" }, line1 = 2, line2 = 3 })
 
     assert.are.equal("Comment: ", input_opts.prompt)
-    assert.are.equal("src/a.lua :L2-3 needs a guard\n", (delivered_render("/tmp/proj")))
-    assert.are.equal("/tmp/proj/src/a.lua :L2-3 needs a guard\n", (delivered_render(nil)))
+    assert.are.equal("src/a.lua :L2-3 needs a guard\n", (delivered_render({ cwd = "/tmp/proj" })))
+    assert.are.equal("/tmp/proj/src/a.lua :L2-3 needs a guard\n", (delivered_render({})))
   end)
 
   it("sends nothing when the note is cancelled or left blank", function()
