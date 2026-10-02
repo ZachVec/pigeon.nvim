@@ -17,9 +17,14 @@ end
 ---@param name? string
 ---@return integer
 function M.buffer(lines, name)
-  lines = type(lines) == "string" and vim.split(lines, "\n", { plain = true }) or lines
+  local body
+  if type(lines) == "string" then
+    body = vim.split(lines, "\n", { plain = true })
+  else
+    body = lines
+  end
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, body)
   if name and name ~= "" then
     vim.api.nvim_buf_set_name(buf, name)
   end
@@ -42,11 +47,13 @@ end
 function M.notifications(fn)
   local seen = {}
   local original = vim.notify
-  -- The real signature: this assignment is what types `vim.notify` for the
-  -- whole workspace, and a one-parameter stub would read as "level is a
-  -- redundant argument" at every `vim.notify(msg, level)` call site.
+  -- Two parameters, like the real `vim.notify`: this stub is what defines the
+  -- function for a server without the Neovim runtime library (the CLI lint),
+  -- and a one-parameter stub there reads as "level is a redundant argument" at
+  -- every `vim.notify(msg, level)` call site.
   ---@param msg string
   ---@param _ integer?
+  ---@diagnostic disable-next-line: duplicate-set-field
   vim.notify = function(msg, _)
     seen[#seen + 1] = msg
   end

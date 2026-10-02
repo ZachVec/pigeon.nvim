@@ -44,6 +44,7 @@ describe("pigeon.picker", function()
 
     local seen
     local original = vim.ui.select
+    ---@diagnostic disable-next-line: duplicate-set-field
     vim.ui.select = function(items, opts, on_choice)
       seen = { items = items, opts = opts }
       on_choice(items[2])

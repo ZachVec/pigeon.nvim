@@ -42,14 +42,30 @@ diagnoses the `lua/` directory and silently skips `tests/`. `make lint` passes
 the workspace root instead; before that, every diagnostic the editor showed in
 a spec was invisible to `make check`.
 
-### LuaLS needs the test globals named as libraries
+### A file's `workspace.library` replaces the editor's, it does not extend it
 
 The specs run inside busted's environment — `describe`, `it`, `setup`, and
 assertions like `assert.are_not.equal` — which LuaLS knows only when
 `workspace.library` names `${3rd}/busted/library` (the globals, and
 `assert = require("luassert")`) and `${3rd}/luassert/library` (the assertion
-fields). `.luarc.json` names both. `.tests/`, where the suite installs its own
-copy of luassert, is ignored, so the server never sees that one.
+fields). `.tests/`, where the suite installs its own copy of luassert, is
+ignored instead: the server would otherwise index a second copy.
+
+That key is not merged with the list an editor plugin injects — lua_ls takes
+the file's `workspace.library` as the whole list. A list holding only the two
+test libraries therefore drops the project's own `lua/`, which lazydev adds
+because it resolves `require` against library roots (`runtime.path` is
+`{ "?.lua", "?/init.lua" }`, `pathStrict`) and keeps `ignoreDir = { "/lua" }`
+so the workspace scan does not cover the same files. The result is that
+`require("pigeon.…")` resolves to nothing: no definitions, no references, and
+`(global) vim.api.…` on hover, because the Neovim runtime library went with it.
+Measured: without `lua` in the list, `definition` on a `Util.relpath` call
+answers nothing; with it, `pigeon/util.lua:146` and 12 references.
+
+`.luarc.json` therefore names the project's own `lua/` and `${env:VIMRUNTIME}/lua`
+beside the two test libraries. `${env:…}` is expanded by the server, and
+Neovim exports `VIMRUNTIME` to the servers it starts; where nothing sets it
+(the CLI lint, CI) the path is simply not there and is ignored.
 
 The luassert meta is also stricter than the library: it declares
 `is_true(value)` while the runtime reads a failure message from the next

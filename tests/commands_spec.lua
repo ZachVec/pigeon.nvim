@@ -33,6 +33,7 @@ describe("pigeon.commands", function()
   --- Make the next `vim.ui.input` answer with `note`; nil stands for Esc.
   ---@param note string?
   local function answer_prompt(note)
+    ---@diagnostic disable-next-line: duplicate-set-field
     vim.ui.input = function(opts, cb)
       input_opts = opts
       cb(note)
@@ -232,6 +233,7 @@ describe("pigeon.commands", function()
     vim.api.nvim_win_set_buf(0, buf)
 
     local asked = false
+    ---@diagnostic disable-next-line: duplicate-set-field
     vim.ui.input = function()
       asked = true
     end
