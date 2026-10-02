@@ -147,6 +147,9 @@ require("pigeon").setup({
 })
 ```
 
+Every comment ends with a newline, so a second comment — and anything you type
+next — starts on its own line.
+
 ## Pickers
 
 `picker` selects the UI used for prompt names, files, buffers, and the target

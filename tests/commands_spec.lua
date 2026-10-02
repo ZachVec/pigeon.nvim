@@ -208,8 +208,8 @@ describe("pigeon.commands", function()
     Commands.run({ fargs = { "comment" }, line1 = 2, line2 = 3 })
 
     assert.are.equal("Comment: ", input_opts.prompt)
-    assert.are.equal("src/a.lua :L2-3 needs a guard", (delivered_render("/tmp/proj")))
-    assert.are.equal("/tmp/proj/src/a.lua :L2-3 needs a guard", (delivered_render(nil)))
+    assert.are.equal("src/a.lua :L2-3 needs a guard\n", (delivered_render("/tmp/proj")))
+    assert.are.equal("/tmp/proj/src/a.lua :L2-3 needs a guard\n", (delivered_render(nil)))
   end)
 
   it("sends nothing when the note is cancelled or left blank", function()

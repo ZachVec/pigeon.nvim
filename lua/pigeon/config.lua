@@ -55,7 +55,8 @@ local defaults = {
   },
   --- Comments: a note about a line range, delivered as soon as it is typed.
   comments = {
-    --- What a comment sends, rendered for the target pane. Fields: `{note}`
+    --- What a comment says, rendered for the target pane; a trailing newline is
+    --- appended, so the next comment starts on its own line. Fields: `{note}`
     --- (what you typed), `{lines}` (the range spelled through the format hook),
     --- and the `{file}`/`{start}`/`{end}` building blocks.
     item = "{lines} {note}",

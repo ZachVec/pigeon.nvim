@@ -246,7 +246,7 @@ No keymaps are installed.
 | 24 | A single chosen pane becomes the session's target; a **multi-choice is a one-off broadcast** that remembers nothing (there is no honest way to remember "one of several"). |
 | 25 | The producers are named for what they produce, in the plural: `prompts`, `references`, `comments`. `gather` named an act without its object — the same fault as `send` — and the module's substance is the **references** it spells. |
 | 26 | **`config.lua` is data**: the defaults plus shape checks (`format` is a hook or absent, `comments.item` a string). The behavior a value selects is resolved by the module that owns it, in that module's own `setup`; the reference dialect therefore lives in `reference.lua`, which every command spells through. Nothing is called `apply`. |
-| 27 | **A comment stays templated.** `comments.item` decides the shape a comment sends in — `{lines} {note}` by default, over `{note}`, `{lines}`, `{file}`, `{start}`, and `{end}` — so the arrangement is the user's, not one option per arrangement. |
+| 27 | **A comment stays templated.** `comments.item` decides the shape a comment sends in — `{lines} {note}` by default, over `{note}`, `{lines}`, `{file}`, `{start}`, and `{end}` — so the arrangement is the user's, not one option per arrangement. The rendered comment ends with a newline, so consecutive comments do not run together. |
 | 28 | **The file lister is resolved once**, in `References.setup`: the first of fd, rg, find on PATH. A machine's tools do not come and go under a session, so a `files` pick never re-probes and never falls through — a lister that fails reports its own failure. Installing one takes another `setup`. |
 
 ## Reintroduction conditions
