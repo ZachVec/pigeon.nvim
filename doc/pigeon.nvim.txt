@@ -1,0 +1,203 @@
+*pigeon.nvim.txt*        Pigeon: send text to the other panes of this window
+
+
+==============================================================================
+CONTENTS                                                        *pigeon.nvim*
+
+1. Introduction                                      |pigeon.nvim-introduction|
+2. Requirements                                        |pigeon.nvim-requirements|
+3. Installation                                        |pigeon.nvim-installation|
+4. Configuration                                      |pigeon.nvim-configuration|
+5. Commands                                              |pigeon.nvim-commands|
+
+==============================================================================
+1. INTRODUCTION                                *pigeon.nvim-introduction*
+
+Pigeon sends text from Neovim into the other panes of the multiplexer window
+this Neovim is running in. It carries the prompt, files-and-buffers, and
+comment machinery of vantage.nvim, without any agent management.
+
+The target is another pane of this Neovim's window. With one sibling there is
+nothing to choose: it becomes the session's target. With several, a pick
+decides, and your choice becomes the target for later sends; mark several to
+broadcast once without remembering any of them.
+
+Sends are pasted, not typed: Pigeon never presses Enter, so what you send waits
+in the other pane for you to review.
+
+==============================================================================
+2. REQUIREMENTS                                *pigeon.nvim-requirements*
+
+- Neovim >= 0.11
+- tmux 3.0+ (the only multiplexer adapter today)
+
+==============================================================================
+3. INSTALLATION                                *pigeon.nvim-installation*
+
+With lazy.nvim: >
+
+    {
+      "ZachVec/pigeon.nvim",
+      cmd = "Pigeon",
+      opts = {},
+    }
+
+<
+The plugin loads on the first `:Pigeon`.
+
+==============================================================================
+4. CONFIGURATION                              *pigeon.nvim-configuration*
+
+`setup()` accepts: >
+
+    require("pigeon").setup({
+      multiplexer = "auto",     -- auto | tmux | none
+      picker = "native",        -- native | fzf-lua | snacks
+
+      format = nil,             -- function(file, loc) -> string
+      prompts = {               -- add or override prompt templates
+        ["{file}"] = "{file}",
+        ["{line}"] = "{line}",
+      },
+
+      comments = {
+        item = "{lines} {note}", -- what a comment sends
+      },
+
+      references = {
+        join = "\n",             -- separator between file/buffer references
+      },
+    })
+
+<
+`multiplexer` is `"auto"` by default: it detects the multiplexer this Neovim is
+running inside. A name forces one; `"none"` disables sending. An unknown or
+unavailable `multiplexer` or `picker` is an error at setup.
+
+REFERENCES ~
+                                                      *pigeon.nvim-reference*
+
+A reference is a path relative to the **target pane's** working directory —
+absolute when the path lies outside it, or when the adapter cannot report a
+working directory at all — plus its `:L` position when there is one:
+
+    src/a.lua
+    src/a.lua :L42
+    src/a.lua :L42-45
+
+`format(file, loc)` decides the dialect; `loc` is the `:L` suffix, or nil for a
+whole-file reference: >
+
+    require("pigeon").setup({
+      format = function(file, loc)
+        return "@" .. file .. (loc and (" " .. loc) or "")
+      end,
+    })
+
+<
+A hook that returns nil or `""` declines that reference, and Pigeon sends
+nothing rather than half a message.
+
+PROMPTS ~
+                                                        *pigeon.nvim-prompts*
+
+`prompts` maps names to templates. The built-in names are `{file}` and
+`{line}`; user entries merge with them, so a name you set overrides the
+built-in while names you leave unset are kept. `:Pigeon prompt` picks a name and
+sends the rendered template.
+
+    {file}          `path/to/file.lua`
+    {line}          `path/to/file.lua :L42`
+
+Locations are spelled by `format`. >
+
+    require("pigeon").setup({
+      prompts = { review = "Review {file} for bugs." },
+    })
+
+<
+FILES AND BUFFERS ~
+                                                *pigeon.nvim-files-and-buffers*
+
+`:Pigeon files` picks files and sends their references. It lists files under
+Neovim's global cwd (`:cd`; not `:lcd`/`:tcd`) — the tree you are browsing —
+using `fd`, then `ripgrep`, then `find`; all three skip `.git`.
+
+`:Pigeon buffers` picks listed buffers whose file exists on disk, most recently
+used first. A modified buffer is marked `[+]` because the panes read the
+on-disk version.
+
+Every chosen path is spelled as a reference (see |pigeon.nvim-reference|),
+joined by `references.join`, and followed by a trailing space so continued
+typing stays off the last reference.
+
+COMMENTS ~
+                                                       *pigeon.nvim-comments*
+
+`:Pigeon comment` asks for a note about the selection or the current line and
+sends it there and then. Enter sends, `<Esc>` cancels, and a blank note sends
+nothing. Nothing is kept between sends: a second note is a second send, so
+several notes stack up in the receiving pane's own input, waiting for the one
+Enter that submits them together.
+
+`comments.item` decides what a comment sends and supports `{note}`, `{lines}`,
+`{file}`, `{start}`, and `{end}`; `{lines}` and `{file}` are spelled through
+`format` for the target pane. The default puts the reference first, then your
+note. >
+
+    require("pigeon").setup({
+      comments = { item = "{lines} {note}" },
+    })
+
+<
+PICKERS ~
+                                                        *pigeon.nvim-pickers*
+
+`picker` selects the UI used for prompt names, files, buffers, and the target
+pane:
+
+    `"native"`    `vim.ui.select`; no preview and no list keys
+    `"fzf-lua"`   fzf-lua; previews and list keys
+    `"snacks"`    snacks.nvim; previews and list keys
+
+An engine does not have to be loaded before `setup` -- a plugin manager may
+install it lazily -- but an engine that is not installed at all is an error at
+setup. The engine-backed pickers stream, so a listing that is still being
+produced can be searched and cancelled; `native` waits for it to finish.
+
+`native` marks nothing, so a pick that accepts several entries sends one at a
+time.
+
+==============================================================================
+5. COMMANDS                                    *pigeon.nvim-commands*
+
+                                                                            *:Pigeon*
+`:Pigeon`
+    List the subcommands.
+
+`:Pigeon prompt`
+    Pick a prompt template and send it to the target.
+
+`:Pigeon files`
+    Pick files and send their references.
+
+`:Pigeon buffers`
+    Pick buffers and send their references.
+
+`:Pigeon comment`
+    Ask for a note about the current selection or line and send it.
+
+`:Pigeon send`
+    Send the range — the selection, or the current line — verbatim: no
+    template and no reference spelling.
+
+`:Pigeon retarget`
+    Choose which pane this session sends to.
+
+`:Pigeon status`
+    Show the target and the detected multiplexer.
+
+No keymaps are installed; map the subcommands you use.
+
+==============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:

@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor the plugin claims, and the release it is developed on.
+        neovim: [v0.11.0, stable]
+    name: Neovim ${{ matrix.neovim }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Neovim
+        run: |
+          curl -fsSL -o /tmp/nvim.tar.gz \
+            "https://github.com/neovim/neovim/releases/download/${{ matrix.neovim }}/nvim-linux-x86_64.tar.gz"
+          sudo tar -xzf /tmp/nvim.tar.gz -C /opt
+          sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+
+      # The tmux adapter specs drive a real server over a private socket.
+      - name: Install tmux
+        run: sudo apt-get install -y --no-install-recommends tmux
+
+      - name: Lua format
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --check .
+
+      # `make check` would also run lua-language-server, which CI does not
+      # install; the format step above covers the same ground here.
+      - name: Test
+        run: make test
