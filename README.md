@@ -56,7 +56,10 @@ require("pigeon").setup({
   multiplexer = "auto",     -- auto | tmux | none
   picker = "native",        -- native | fzf-lua | snacks
 
-  format = nil,             -- function(file, loc) -> string; nil keeps `file :L42`
+  format = function(file, loc) -- how a location reads; see References
+    return file .. (loc and " " .. loc or "")
+  end,
+
   prompts = {               -- add or override prompt templates
     ["{file}"] = "{file}",
     ["{line}"] = "{line}",
