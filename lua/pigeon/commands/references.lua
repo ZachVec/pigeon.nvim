@@ -12,14 +12,17 @@ local Util = require("pigeon.util")
 
 local M = {}
 
---- External file listers, best first. All three skip `.git`, and each one's
---- order is the tool's — the listing is not sorted. `find` is the last resort
---- and the crudest: unlike fd and rg it reads no ignore files, so a find-only
---- machine lists what find sees.
+--- External file listers, best first. All three skip `.git` and follow
+--- directory symlinks, so the files inside a linked directory are listed and
+--- the link itself is not an entry; following also resolves a symlinked file
+--- to a listable file and drops a broken link. Each one's order is the tool's
+--- — the listing is not sorted. `find` is the last resort and the crudest:
+--- unlike fd and rg it reads no ignore files, so a find-only machine lists
+--- what find sees.
 local LISTERS = {
-  { name = "fd", argv = { "fd", "--type", "f", "--type", "l", "--color", "never", "-E", ".git" } },
-  { name = "rg", argv = { "rg", "--files", "--no-messages", "--color", "never", "-g", "!.git" } },
-  { name = "find", argv = { "find", ".", "-type", "f", "-not", "-path", "*/.git/*" } },
+  { name = "fd", argv = { "fd", "--type", "f", "--follow", "--color", "never", "-E", ".git" } },
+  { name = "rg", argv = { "rg", "--files", "--follow", "--no-messages", "--color", "never", "-g", "!.git" } },
+  { name = "find", argv = { "find", "-L", ".", "-type", "f", "-not", "-path", "*/.git/*" } },
 }
 
 --- Lines a file preview reads.
@@ -96,22 +99,40 @@ local function stream_files(cwd, emit, done)
     return function() end
   end
   local name = lister.name
-  return Util.run_lines(lister.argv, { cwd = cwd }, function(lines)
+  local emitted = false
+  local stopped = false
+  local cancel = Util.run_lines(lister.argv, { cwd = cwd }, function(lines)
     local entries = {}
     for _, line in ipairs(lines) do
       local path = vim.fs.normalize(vim.fs.joinpath(cwd, line))
       entries[#entries + 1] = { text = Util.relpath(cwd, path), path = path }
     end
-    emit(entries)
+    if #entries > 0 then
+      emitted = true
+      emit(entries)
+    end
   end, function(code)
-    -- `rg --files` exits 1 when it found no files — a project whose files are
-    -- all ignored — which is an empty listing, not a failure.
-    local empty = code == 0 or (name == "rg" and code == 1)
-    if not empty then
+    if stopped then
+      return
+    end
+    -- Following symlinks makes rg and find exit non-zero on a link they could
+    -- not follow — a broken link, a cycle — even though the listing is
+    -- otherwise complete, so a run that produced entries is answered. Only a
+    -- silent non-zero exit is a failure. `rg --files` exits 1 when it found no
+    -- files — a project whose files are all ignored — which is an empty
+    -- listing, not a failure.
+    local answered = emitted or code == 0 or (name == "rg" and code == 1)
+    if not answered then
       Util.warn(("file listing failed (%s)"):format(name))
     end
     done()
   end)
+  -- A cancelled listing is not a failure: the picker closed, or a command
+  -- restarted the run.
+  return function()
+    stopped = true
+    cancel()
+  end
 end
 
 --- Emit the in-memory buffer candidates in one batch: listed, normal-buftype,

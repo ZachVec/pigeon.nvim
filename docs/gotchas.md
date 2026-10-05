@@ -73,6 +73,25 @@ argument, so `assert.is_true(value, message)` — which works — is a
 `redundant-parameter` warning. `assert(value, message)` says the same thing and
 type-checks.
 
+## File listers
+
+### Following symlinks makes rg and find exit non-zero on a link they skip
+
+`rg --follow` exits 2 on a broken symlink or a symlink cycle, and `find -L`
+exits 1 on a cycle, even though both have still produced a complete listing (fd
+exits 0 and skips them silently). Treating every non-zero exit as a failure
+therefore warns about a listing that is fine, so `pigeon.commands.references`
+answers a run that produced entries and reserves the failure report for a
+silent non-zero exit.
+
+### `find -type f` matches by lstat, so it never sees symlinks
+
+Plain `find . -type f` does not list a symlink (of either kind) and does not
+descend a linked directory. `-L` makes it stat the target instead: a symlinked
+file matches `-type f`, and a linked directory is walked. The same distinction
+is why fd listed a linked directory as an entry under `--type l` and only
+walks it under `--follow`.
+
 ## tmux
 
 ### Test servers start with `-f /dev/null`
