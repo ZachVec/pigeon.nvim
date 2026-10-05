@@ -14,7 +14,7 @@ local Util = require("pigeon.util")
 ---@alias pigeon.ReferenceFormat fun(file: string, loc: string?): string?
 
 ---@class pigeon.Config
----@field multiplexer string "auto" (detect) | an adapter name | "none"
+---@field multiplexer string "auto" (detect) | an adapter name
 ---@field picker string "native" | "fzf-lua" | "snacks"
 ---@field format pigeon.ReferenceFormat the plain spelling, or the configured hook
 ---@field prompts table<string, string> named prompt templates (name -> template)
@@ -24,7 +24,7 @@ local Util = require("pigeon.util")
 --- What `setup` accepts: the same keys, each optional, merged over the
 --- defaults. `pigeon.Config` is the resolved table `M.options` holds.
 ---@class pigeon.ConfigOverrides
----@field multiplexer? string "auto" (detect) | an adapter name | "none"
+---@field multiplexer? string "auto" (detect) | an adapter name
 ---@field picker? string "native" | "fzf-lua" | "snacks"
 ---@field format? pigeon.ReferenceFormat
 ---@field prompts? table<string, string> named prompt templates (name -> template)
@@ -36,7 +36,7 @@ local M = {}
 ---@type pigeon.Config
 local defaults = {
   --- Which multiplexer adapter to use. "auto" detects the one this Neovim is
-  --- running inside; a name forces it; "none" disables sending entirely.
+  --- running inside; a name forces it.
   multiplexer = "auto",
   --- Pluggable picker implementation.
   picker = "native",

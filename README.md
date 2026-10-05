@@ -53,7 +53,7 @@ line.
 
 ```lua
 require("pigeon").setup({
-  multiplexer = "auto",     -- auto | tmux | none
+  multiplexer = "auto",     -- auto | tmux
   picker = "native",        -- native | fzf-lua | snacks
 
   format = function(file, loc) -- how a location reads; see References
@@ -76,7 +76,7 @@ require("pigeon").setup({
 ```
 
 An unknown or unavailable `multiplexer`/`picker` is an error at setup. `auto`
-detects the multiplexer this Neovim is running inside; `none` disables sending.
+detects the multiplexer this Neovim is running inside.
 
 ### References
 

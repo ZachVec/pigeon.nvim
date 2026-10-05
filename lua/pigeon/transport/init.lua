@@ -74,19 +74,14 @@ local function load(name)
 end
 
 --- Resolve the adapter once. `auto` picks the first adapter that answers for
---- this environment; a name forces one; `none` disables sending. An unknown or
---- misconfigured name is a setup error; simply being outside every multiplexer
---- is not.
+--- this environment; a name forces one. An unknown or misconfigured name is a
+--- setup error; simply being outside every multiplexer is not.
 ---@param opts? { multiplexer?: string }
 function M.setup(opts)
   initialized = true
   resolved, resolved_name, reason = nil, nil, nil
 
   local want = (opts and opts.multiplexer) or "auto"
-  if want == "none" then
-    reason = 'sending is disabled (multiplexer = "none")'
-    return
-  end
 
   if want == "auto" then
     for _, name in ipairs(ORDER) do
