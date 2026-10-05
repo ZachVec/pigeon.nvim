@@ -28,7 +28,7 @@ tests/                mini.test specs + bootstrap
 Makefile              check entrypoint
 stylua.toml           Lua formatting
 .github/              CI: the suite on Neovim v0.11.0 (the floor) and stable
-LICENSE               Apache-2.0
+LICENSE               MIT
 ```
 
 ## Commands
