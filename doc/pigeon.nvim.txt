@@ -22,14 +22,12 @@ nothing to choose: it becomes the session's target. With several, a pick
 decides, and your choice becomes the target for later sends; mark several to
 broadcast once without remembering any of them.
 
-Sends are pasted, not typed: Pigeon never presses Enter, so what you send waits
-in the other pane for you to review.
-
 ==============================================================================
 2. REQUIREMENTS                                *pigeon.nvim-requirements*
 
 - Neovim >= 0.11
-- tmux 3.0+ (the only multiplexer adapter today)
+- tmux 3.0+ (tmux is the only multiplexer supported today)
+- fzf-lua / snacks.nvim (optional, for multi-select and previews)
 
 ==============================================================================
 3. INSTALLATION                                *pigeon.nvim-installation*
@@ -81,8 +79,8 @@ REFERENCES ~
                                                       *pigeon.nvim-reference*
 
 A reference is a path relative to the **target pane's** working directory —
-absolute when the path lies outside it, or when the adapter cannot report a
-working directory at all — plus its `:L` position when there is one:
+absolute when the path lies outside it, or when the pane's working directory
+isn't known — plus its `:L` position when there is one:
 
     src/a.lua
     src/a.lua :L42
@@ -96,13 +94,8 @@ pane:
     codex                   `src/a.lua`, `src/a.lua :L42-50`
     anything else           `src/a.lua`, `src/a.lua :L42-50`
 
-A program launched through an interpreter still counts: detection reads the
-command lines of the pane's processes, so a `node .../codex` pane is
-recognized as codex.
-
-`format` replaces the fallback -- the format a pane running anything else
-reads; claude and codex keep their own. Its default is the plain `file` /
-`file :L42` spelling above: >
+`format` spells a reference for any other program; its default is the plain
+`file` / `file :L42` spelling above: >
 
     require("pigeon").setup({
       format = function(file, loc)
@@ -135,25 +128,15 @@ Locations are spelled by `format`. >
 FILES AND BUFFERS ~
                                                 *pigeon.nvim-files-and-buffers*
 
-`:Pigeon files` picks files and sends their references. It lists files under
-Neovim's global cwd (`:cd`; not `:lcd`/`:tcd`) — the tree you are browsing —
-using `fd`, then `ripgrep`, then `find`; all three skip `.git`.
-
-`:Pigeon buffers` picks listed buffers whose file exists on disk, most recently
-used first. A modified buffer is marked `[+]` because the panes read the
-on-disk version.
-
-Every chosen path is spelled as a reference (see |pigeon.nvim-reference|),
-joined by `references.join`. Nothing is added around them.
+`:Pigeon files` picks files under Neovim's global cwd (`:cd`); `:Pigeon buffers`
+picks listed buffers, marking a modified one `[+]`. The chosen paths are sent as
+references (see |pigeon.nvim-reference|), joined by `references.join`.
 
 COMMENTS ~
                                                        *pigeon.nvim-comments*
 
 `:Pigeon comment` asks for a note about the selection or the current line and
-sends it there and then. Enter sends, `<Esc>` cancels, and a blank note sends
-nothing. Nothing is kept between sends: a second note is a second send, so
-several notes stack up in the receiving pane's own input, waiting for the one
-Enter that submits them together.
+sends it there and then.
 
 `comments.item` decides what a comment sends and supports `{note}`, `{lines}`,
 `{file}`, `{start}`, and `{end}`; `{lines}` and `{file}` are spelled in the
@@ -177,10 +160,11 @@ pane:
     `"fzf-lua"`   fzf-lua; previews and list keys
     `"snacks"`    snacks.nvim; previews and list keys
 
-An engine does not have to be loaded before `setup` -- a plugin manager may
-install it lazily -- but an engine that is not installed at all is an error at
-setup. The engine-backed pickers stream, so a listing that is still being
-produced can be searched and cancelled; `native` waits for it to finish.
+A picker engine must be installed, but not loaded before `setup` -- a plugin
+manager may install it lazily; an engine that is missing is an error at setup.
+With `fzf-lua` or `snacks`, a listing that is still being produced can be
+searched and cancelled; `native` opens only once the listing is complete, so a
+large or slow listing keeps you waiting.
 
 `native` marks nothing, so a pick that accepts several entries sends one at a
 time.
