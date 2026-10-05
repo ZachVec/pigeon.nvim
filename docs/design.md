@@ -209,7 +209,7 @@ composition → commands ──▶ deliver ──▶ transport
 
 ```lua
 require("pigeon").setup({
-  multiplexer = "auto",     -- auto | tmux | none
+  multiplexer = "auto",     -- auto | tmux
   picker = "native",        -- native | fzf-lua | snacks
 
   format = hook,            -- function(file, loc) -> string; the plain spelling by default

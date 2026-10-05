@@ -49,7 +49,7 @@ The plugin loads on the first `:Pigeon`.
 `setup()` accepts: >
 
     require("pigeon").setup({
-      multiplexer = "auto",     -- auto | tmux | none
+      multiplexer = "auto",     -- auto | tmux
       picker = "native",        -- native | fzf-lua | snacks
 
       format = function(file, loc) -- how a location reads
@@ -72,8 +72,8 @@ The plugin loads on the first `:Pigeon`.
 
 <
 `multiplexer` is `"auto"` by default: it detects the multiplexer this Neovim is
-running inside. A name forces one; `"none"` disables sending. An unknown or
-unavailable `multiplexer` or `picker` is an error at setup.
+running inside. A name forces one. An unknown or unavailable `multiplexer` or
+`picker` is an error at setup.
 
 REFERENCES ~
                                                       *pigeon.nvim-reference*
