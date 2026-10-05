@@ -7,7 +7,8 @@ comment on a line or selection, or the text you select.
 ## Requirements
 
 - Neovim ≥ 0.11
-- tmux 3.0+ (the only multiplexer adapter today)
+- tmux 3.0+ (tmux is the only multiplexer supported today)
+- [fzf-lua](https://github.com/ibhagwan/fzf-lua) / [snacks.nvim](https://github.com/folke/snacks.nvim) **_(optional, for multi-select and previews)_**
 
 ## Install
 
@@ -44,11 +45,6 @@ decides, and your choice becomes the target for later sends; mark several to
 broadcast once without remembering any of them. `:Pigeon retarget` chooses a
 different one.
 
-Sends are pasted, not typed: pigeon never presses Enter, so what you send waits
-in the other pane for you to review. Whether an embedded newline submits is the
-receiving program's business — an agent CLI inserts it, a bare shell runs the
-line.
-
 ## Configuration
 
 ```lua
@@ -81,8 +77,8 @@ detects the multiplexer this Neovim is running inside; `none` disables sending.
 ### References
 
 A reference is a path relative to the **target pane's** working directory
-(absolute when the path lies outside it, and when the adapter cannot report a
-working directory at all), plus its `:L` position when there is one:
+(absolute when the path lies outside it, or when the pane's working directory
+isn't known), plus its `:L` position when there is one:
 
 ```
 src/a.lua
@@ -99,13 +95,8 @@ pane:
 | codex | `src/a.lua`, `src/a.lua :L42-50` |
 | anything else | `src/a.lua`, `src/a.lua :L42-50` |
 
-A program launched through an interpreter still counts: detection reads the
-command lines of the pane's processes, so a `node …/codex` pane is recognized
-as codex.
-
-`format` replaces the fallback — the format a pane running anything else reads;
-claude and codex keep their own. Its default is the `src/a.lua` /
-`src/a.lua :L42` spelling above:
+`format` spells a reference for any other program; its default is the
+`src/a.lua` / `src/a.lua :L42` spelling above:
 
 ```lua
 require("pigeon").setup({
@@ -137,20 +128,14 @@ require("pigeon").setup({
 
 ### Files and buffers
 
-`files` lists files under Neovim's global cwd (`:cd`; not `:lcd`/`:tcd`) — the
-tree you are browsing — using `fd`, then `ripgrep`, then `find`; all three skip
-`.git`. `buffers` lists listed buffers whose file exists on disk, most recently
-used first, marking a modified buffer `[+]` because the panes read the on-disk
-version. Chosen paths are spelled as references (above), joined with
-`references.join` — nothing is added around them.
+`files` picks files under Neovim's global cwd (`:cd`); `buffers` picks listed
+buffers, marking a modified one `[+]`. The chosen paths are sent as references
+(above), joined with `references.join`.
 
 ### Comments
 
 `comment` asks for a note about the selection or the current line and sends it
-there and then. Enter sends, `Esc` cancels, and a blank note sends nothing.
-Nothing is kept between sends — a second note is a second send, so several
-notes stack up in the receiving pane's own input, waiting for the one Enter
-that submits them together.
+there and then.
 
 `comments.item` decides what a comment sends and supports `{note}`, `{lines}`,
 `{file}`, `{start}`, and `{end}`; `{lines}` and `{file}` are spelled in the
@@ -164,25 +149,6 @@ require("pigeon").setup({
 
 The default ends with a newline, so a second comment — and anything you type
 next — starts on its own line.
-
-## Pickers
-
-`picker` selects the UI used for prompt names, files, buffers, and the target
-pane:
-
-| Picker | Provided by | Previews |
-|--------|-------------|----------|
-| `"native"` | `vim.ui.select` | — |
-| `"fzf-lua"` | fzf-lua | yes |
-| `"snacks"` | snacks.nvim | yes |
-
-An engine does not have to be loaded before `setup` — a plugin manager may
-install it lazily — but an engine that is not installed at all is an error at
-setup. The engine-backed pickers stream, so a listing that is still being
-produced can be searched and cancelled; `native` waits for it to finish.
-
-`native` marks nothing, so a pick that accepts several entries sends one at a
-time.
 
 ## License
 
