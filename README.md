@@ -152,4 +152,4 @@ next — starts on its own line.
 
 ## License
 
-Apache-2.0.
+MIT.
